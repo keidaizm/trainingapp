@@ -76,7 +76,7 @@ function WorkoutContent() {
             timerRef.current = setInterval(() => {
                 setRestSecondsLeft((prev) => {
                     if (prev <= 1) {
-                        playBeep();
+                        playBell();
                         setIsResting(false);
                         return 0;
                     }
@@ -91,31 +91,57 @@ function WorkoutContent() {
         };
     }, [isResting, restSecondsLeft]);
 
-    // ... (Audio logic same)
-    const playBeep = () => {
+    // Audio logic
+    const initAudio = () => {
         try {
             if (!audioContextRef.current) {
                 audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
             }
+            if (audioContextRef.current.state === 'suspended') {
+                audioContextRef.current.resume();
+            }
+        } catch (e) {
+            console.error("Failed to initialize audio", e);
+        }
+    };
+
+    const playBell = () => {
+        try {
+            initAudio();
             const ctx = audioContextRef.current;
-            if (ctx.state === 'suspended') ctx.resume();
+            if (!ctx) return;
 
-            const oscillator = ctx.createOscillator();
-            const gainNode = ctx.createGain();
+            const now = ctx.currentTime;
 
-            oscillator.connect(gainNode);
-            gainNode.connect(ctx.destination);
+            // Bell sound synthesis
+            // Primary tone and some harmonics
+            const frequencies = [880, 1760, 2640];
 
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-            gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+            frequencies.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-            oscillator.start();
-            oscillator.stop(ctx.currentTime + 0.5);
-        } catch (e) { }
+                osc.type = index === 0 ? 'sine' : 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+
+                // Attack and Decay
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(index === 0 ? 0.2 : 0.05, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + (index === 0 ? 1.5 : 0.5));
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 1.5);
+            });
+        } catch (e) {
+            console.error("Failed to play bell", e);
+        }
     };
 
     const handleFinishSet = async () => {
+        initAudio(); // Unlock audio on user interaction
         if (!session) return;
 
         const newRepsBySet = [...session.repsBySet];
@@ -159,11 +185,13 @@ function WorkoutContent() {
     };
 
     const handleSkipRest = () => {
+        initAudio();
         setIsResting(false);
         setRestSecondsLeft(0);
     };
 
     const handleAdjustRest = (delta: number) => {
+        initAudio();
         setRestSecondsLeft((prev) => Math.max(0, prev + delta));
     };
 
@@ -274,7 +302,10 @@ function WorkoutContent() {
 
                         <div className="flex items-center justify-center gap-8 mb-10">
                             <button
-                                onClick={() => setInputReps(r => Math.max(0, r - 1))}
+                                onClick={() => {
+                                    initAudio();
+                                    setInputReps(r => Math.max(0, r - 1));
+                                }}
                                 className="w-20 h-20 rounded-full btn-secondary flex items-center justify-center hover:bg-slate-800 active:scale-95 transition-all"
                             >
                                 <Minus size={32} />
@@ -283,7 +314,10 @@ function WorkoutContent() {
                                 {inputReps}
                             </div>
                             <button
-                                onClick={() => setInputReps(r => r + 1)}
+                                onClick={() => {
+                                    initAudio();
+                                    setInputReps(r => r + 1);
+                                }}
                                 className="w-20 h-20 rounded-full btn-secondary flex items-center justify-center hover:bg-slate-800 active:scale-95 transition-all"
                             >
                                 <Plus size={32} />
