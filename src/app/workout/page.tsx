@@ -4,12 +4,15 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateSession, Session, Template, getSession, getLastSession } from "@/lib/db";
 import { RotateCcw, Check, FastForward, Plus, Minus, TrendingUp } from "lucide-react";
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 function WorkoutContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const sessionId = searchParams.get("sessionId");
-    // const templateId = searchParams.get("templateId"); // Legacy support if needed, but we prefer sessionId now
+
+    // Keep screen awake
+    useWakeLock();
 
     const [session, setSession] = useState<Session | null>(null);
     const [lastSession, setLastSession] = useState<Session | undefined>(undefined);
