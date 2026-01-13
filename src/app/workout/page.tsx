@@ -251,6 +251,15 @@ function WorkoutContent() {
 
     // Get previous reps for CURRENT set reference
     const prevReps = lastSession?.repsBySet[currentSetIndex];
+    const prevDateLabel = lastSession?.startedAt
+        ? (() => {
+            const d = new Date(lastSession.startedAt);
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const dd = String(d.getDate()).padStart(2, "0");
+            return `${mm}/${dd}`;
+        })()
+        : undefined;
+    
 
     if (loading || !session) return <div className="text-center p-10 text-slate-500">Preparing workout...</div>;
 
@@ -292,12 +301,6 @@ function WorkoutContent() {
                     <div className="text-center w-full animate-in slide-in-from-bottom-5 duration-300">
                         <div className="mb-6">
                             <div className="text-sm text-slate-400 uppercase tracking-wider mb-2">Reps for Set {currentSetIndex + 1}</div>
-                            {prevReps !== undefined && (
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
-                                    <TrendingUp size={14} className="text-emerald-400" />
-                                    <span className="text-sm text-slate-300">Previous: <span className="text-white font-bold">{prevReps}</span></span>
-                                </div>
-                            )}
                         </div>
 
                         <div className="flex items-center justify-center gap-8 mb-10">
@@ -330,6 +333,12 @@ function WorkoutContent() {
                         >
                             COMPLETE SET
                         </button>
+                        {prevReps !== undefined && prevDateLabel && (
+                            <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/70 border border-slate-700">
+                                <TrendingUp size={14} className="text-emerald-400" />
+                                <span className="text-sm text-slate-300">前回（{prevDateLabel}）: <span className="text-white font-bold">{prevReps}</span>回</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

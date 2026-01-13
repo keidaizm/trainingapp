@@ -1,7 +1,7 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = 'pullup_pwa';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export type Template = {
     id: string; // "tpl_xxx"
